@@ -13,6 +13,32 @@ brew install go
 go version
 ```
 
+### Install gore (Go REPL)
+
+```
+go install github.com/x-motemen/gore/cmd/gore@latest
+echo 'export PATH="$PATH:$(go env GOPATH)/bin"' >> ~/.zshrc
+source ~/.zshrc
+```
+```
+jordan@jordans-mbp go-tutorial % gore --version
+gore 0.6.1 (rev: HEAD/go1.26.0)
+jordan@jordans-mbp go-tutorial % which gore
+/Users/jordan/go/bin/gore
+jordan@jordans-mbp go-tutorial % gore
+gore version 0.6.1  :help for help
+gore> :help
+    :import <package>     import a package
+    :type <expr>          print the type of expression
+    :print                print current source
+    :write [<file>]       write out current source
+    :clear                clear the codes
+    :doc <expr or pkg>    show documentation
+    :help                 show this help
+    :quit                 quit the session
+gore>
+```
+
 ### Definitions
 
 module = see module name in `go.mod`, `go.mod` location defines module boundary, usually 1 module per repo, initialized with `go init mod <name>`, module name + package name used to import packages
