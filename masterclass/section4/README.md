@@ -168,3 +168,7 @@ NOTE: Go has no classes. Instead:
 * Interfaces — define behavior, satisfied implicitly (no `implements` keyword)
 
 Therefore, attachment of `String()` to `LogLevel` achieves OOP-like encapsulation without classes.
+
+## Dependency
+
+Added `github.com/gorilla/mux` dependency to prove an example in README.md from repo root directory. See dependency management details there.

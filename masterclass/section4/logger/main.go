@@ -61,10 +61,17 @@ func printLogLevel(level LogLevel) {
 // Must install from Go tools repo
 // `go install golang.org/x/tools/cmd/stringer@latest`
 
-// TODO: Run `go generate` to generate stringer methods
+// Run `go generate ./..` to generate stringer methods for whole repo
+// Run `go generate ./masterclass/section4/logger` to generate stringer methods for this package
 // TODO: Learn more generators https://chatgpt.com/s/t_69deac2574bc81919a879e06ff791b6c
 
+/*
+The comment below would work when `go generate` is executed if the stringer binary is installed in GOPATH
+Instead we prefer `go tool stringer` so the tool is able to execute based on its inclusion in go.mod
+See README.md in root repo directory for details
 //go:generate stringer -type=Color
+*/
+//go:generate go tool stringer -type=Color
 
 type Color int
 
@@ -86,6 +93,6 @@ func main() {
 
 	// `type LogLevel int`
 	// LogLevel is an alias for int, so we can
-	// pass a int to printLogLevel without err
+	// pass an int to printLogLevel without err
 	printLogLevel(10)
 }
