@@ -82,11 +82,13 @@ Each executable has:
 * Many supporting files (optionally)
 * Imports shared libraries (`internal/*`)
 
+Each `internal/*` directory is a shared library that can be imported by other packages. Rather than `package main` the package name is the name of the directory e.g. `package db` or `package auth`.
+
 ## Go CLI
 
 ### `go run <package>`
 
-`go run` compiles a program into temporary directory and executes the program. (program = package)
+`go run` compiles a main program into temporary directory and executes the program. (program = package)
 ```
 jordan@Jordans-MBP go-tutorial % go run masterclass/section1/hello/main.go
 Hello, world!
@@ -104,7 +106,7 @@ However, people almost always run directories because real programs are multi-fi
 
 ### `go build <package>`
 
-`go build` compiles program into current directory. `hello` in the example below is a compiled program.
+`go build` compiles a main program into current directory. `hello` in the example below is a compiled program.
 ```
 jordan@Jordans-MBP go-tutorial % ls
 README.md       go.mod          masterclass
@@ -120,9 +122,15 @@ hello   main.go
 jordan@Jordans-MBP hello %
 ```
 
+`go build` can also compile a library package (without a `main` function) to the build cache for use by other packages, just no executable is generated:
+```
+jordan@Jordans-MacBook-Pro go-tutorial % go env GOCACHE
+/Users/jordan/Library/Caches/go-build
+```
+
 ### `go build ./...`
 
-If executed at the root of this project, multiple `main` packages will be matched. Go will compile them to verify they are error-free but discard the resulting binaries.
+If executed at the root of this project, multiple `main` and library packages will be matched. Go will compile them into the build cache to verify they are error-free but discard the resulting binaries.
 
 To compile one binary to be built and stored in the current directory, specify the directory of the main package, where there will be only 1 main package.
 
@@ -156,11 +164,13 @@ jordan@jordans-mbp go-tutorial %
 
 ### `go install <package>@<version>`
 
+Note: This process is for global installs. See `go get` for project based installs.
+
 Main packages (tools):
 Installs package of particular version from an origin server into the go binary directory i.e. `$(go env GOPATH)/bin`. Additionally, the module and its dependencies are cached in the go module cache i.e. `$(go env GOPATH)/pkg`.
 
 Library packages:
-The module and its dependencies are cached in the go module cache. The code is compiled into an executable if it is imported into a main package that is compiled. If the code is imported into a library package, it is made part of the dependency tree via the go.mod file, but not compiled.
+It does really make sense to globally install a library package, because library packages are auto-installed when they are imported, and do not compile into executable binaries.
 
 Tool example:
 ```
@@ -283,6 +293,12 @@ The last 2 steps are skipped for library packages.
 
 Note that a module proxy is a caching layer between the Go tool and the remote module registry e.g. GitHub. By default, Go may download modules from `proxy.golang.org`; if needed, it can also fetch them directly from the underlying version control system, based on the path `golang.org/x/tools` in this case.
 
+The module proxy can be configured as the GOPROXY:
+```
+jordan@Jordans-MacBook-Pro go-tutorial % go env GOPROXY
+https://proxy.golang.org,direct
+```
+
 Note that some modules have nested modules. In the below example, `gopls` is a module nested within the `tools` module:
 ```
 jordan@Jordans-MacBook-Pro go-tutorial % ls -l $(go env GOPATH)/pkg/mod/golang.org/x | grep tools
@@ -322,12 +338,13 @@ See sourcecode here: https://github.com/golang/tools
 
 You can globally install packages as described above, or you can run `go get` to associate pacakges with a project, in which case the packages and parent modules become cached locally, upon execution of `go build` / `go run` / `go test` / etc.
 
-You would run `go get` when:
+You would run `go get` to:
 * add a library dependency after importing it globally
 * upgrade a dependency to a newer version with `@<version>`
 * pin a dependency to a specific version with `@<version>`
 * remove a dependency with `@none`
 * add a tool dependency with `-tool` (see next section below)
+
 To add a library dependency before importing it globally, be implicit, see recommended approach below.
 
 Example usage with https://github.com/gorilla/mux:
@@ -339,6 +356,8 @@ jordan@Jordans-MacBook-Pro go-tutorial % go mod tidy
 jordan@Jordans-MacBook-Pro go-tutorial %
 ```
 You can pass `-u` to `go get` to upgrade ALL dependencies to their latest versions, which is generally not recommended, as it could cause unsuspecting breaking changes.
+
+Note: If `mux` is not imported in your project, then `git mod tidy` will remove it as it is an unused dependency.
 
 The recommended approach is actually to import a module like `import "github.com/gorilla/mux"` and then run `go mod tidy`. This will automatically download the module and its transitive dependencies, without explicitly executing `go get`. See ./masterclass/section4/dependency for mux import and then:
 ```
@@ -403,6 +422,12 @@ golang.org/x/tools v0.44.0/go.mod h1:KA0AfVErSdxRZIsOVipbv3rQhVXTnlU6UhKxHd1seDI
 ```
 See details on `go.mod` below.
 
+The modules of the tools depeneded on in `go.mod` will be cached in GOPATH/bin and the binaries will be cached in GOCACHE when the tool gets executed:
+```
+jordan@Jordans-MacBook-Pro go-tutorial % go env GOCACHE
+/Users/jordan/Library/Caches/go-build
+```
+
 You can see installed tools like this:
 ```
 jordan@Jordans-MacBook-Pro go-tutorial % go tool    
@@ -452,9 +477,29 @@ Explanations of the `git mod init` command:
 * [go.dev: Tutorial: Create a Go module](https://go.dev/doc/tutorial/create-module)
 * [go.dev: Managing Dependencies](https://go.dev/doc/modules/managing-dependencies#naming_module)
 
-### `go generate`
+### `go generate ./...`
 
-# TODO
+`go generate ./...` searches for `//go:generate <terminal command>` in the project Go files e.g. `//go:generate go tool stringer -type=Color` and executes the command that follows. 
+```
+//go:generate go tool stringer -type=Color
+
+type Color int
+
+const (
+	Red Color = iota
+	Green
+	Blue
+)
+```
+You can also do `go generate <path to package>` to run the commands in a particular package.
+
+
+### `go clean`
+
+```
+go clean -cache     // Removes build cache
+go clean -modcache  // Removes module cache
+```
 
 ### `go fmt`
 
@@ -472,7 +517,7 @@ jordan@Jordans-MBP go-tutorial %
 
 ### `go test`
 
-`go test`
+`go test` TODO
 ```
 ```
 
